@@ -295,6 +295,15 @@
     return { ok: true, elems, reactions, disp, umax, loadSum: [totalLoadX, totalLoadY], reactSum: sumR };
   }
 
+  /* Demi-longueurs développées exactes (portée L, montée ou flèche f).
+     Parabole y = 4f·x(L − x)/L², n = f/L : S = L/4·[√(1 + 16n²) + asinh(4n)/(4n)].
+     Arc de cercle : demi-angle au centre θ = 2·atan(2f/L), rayon R = (L²/4 + f²)/(2f), S = R·θ (valable aussi au-delà du demi-cercle). */
+  S.parabolaHalfLength = (L, f) => {
+    const n = f / L;
+    return n < 1e-9 ? L / 2 : L / 4 * (Math.sqrt(1 + 16 * n * n) + Math.asinh(4 * n) / (4 * n));
+  };
+  S.circHalfLength = (L, f) => f < 1e-9 ? L / 2 : (L * L / 4 + f * f) / (2 * f) * 2 * Math.atan(2 * f / L);
+
   /* Flambement d'un arc dans son plan (méthode présentée par D. Bitar, CTICM, 2020).
      Flambement asymétrique : l'arc est assimilé à un poteau de longueur S (demi-longueur de l'arc),
      Ncr = π²EI / (β·S)², β = 1 (arc bi-articulé ou à 3 articulations), β = 0,7 (arc bi-encastré).
@@ -302,11 +311,7 @@
      o : { L, f, forme: 'para' | 'circ', appuis: 'art' | 'enc', EI (kN·m²), NEd (kN), r (rayon de giration, m) } */
   S.arcBuckling = function (o) {
     const n = o.f / o.L;
-    let Sh;
-    if (o.forme === 'circ') {
-      const R = (o.L * o.L / 4 + o.f * o.f) / (2 * o.f);
-      Sh = R * Math.asin(Math.min(1, o.L / (2 * R)));
-    } else Sh = 0.5 * o.L * (1 + 8 / 3 * n * n - 32 / 5 * n ** 4);
+    const Sh = o.forme === 'circ' ? S.circHalfLength(o.L, o.f) : S.parabolaHalfLength(o.L, o.f);
     const beta = o.appuis === 'enc' ? 0.7 : 1;
     const Ncr = Math.PI ** 2 * o.EI / (beta * Sh) ** 2;
     const alpha = o.NEd > 1e-9 ? Ncr / o.NEd : Infinity;

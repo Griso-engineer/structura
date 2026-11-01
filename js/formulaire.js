@@ -75,12 +75,12 @@
       inputs: ['L', 'q'], len: v => v.L, sup: v => [[0, 'rotule', 'A'], [v.L, 'appui', 'B']],
       loads: v => [{ t: 'tri', x0: 0, x1: v.L, lab: 'q' }], dims: v => [[0, v.L, 'L']],
       M: (x, v) => v.q * v.L * x / 6 - v.q * x ** 3 / (6 * v.L),
-      R: ['qL/6', 'qL/3'], V: [[0, 'qL/6'], [1, '−qL/3']], Ma: [[1 / S3, 'qL² / 9√3']], f: '0,01304 qL⁴ / EI',
+      R: ['qL/6', 'qL/3'], V: [[0, 'qL/6'], [1, '−qL/3']], Ma: [[1 / S3, 'qL² / 9√3']], f: '0,00652 qL⁴ / EI',
       eq: ['M(x) = qLx/6 − qx³/6L', 'M max en x = L/√3 ≈ 0,577 L'],
       res: (v, EI) => [
         r('Réaction R_A', 'qL/6', v.q * v.L / 6, 'kN'), r('Réaction R_B', 'qL/3', v.q * v.L / 3, 'kN'),
         r('Moment max', 'qL² / 9√3 — en x = L/√3', v.q * v.L ** 2 / (9 * S3), 'kN·m', 1),
-        r('Flèche max', '≈ 0,01304·qL⁴ / EI', 0.01304 * v.q * v.L ** 4 / EI * 1e3, 'mm', 1)]
+        r('Flèche max', '≈ 0,00652·qL⁴ / EI', 0.00652 * v.q * v.L ** 4 / EI * 1e3, 'mm', 1)]
     },
     {
       id: 'ss-mom', group: 'Poutres sur deux appuis', title: 'Moment sur appui',
@@ -223,6 +223,7 @@
     { id: 'cable', group: 'Arcs, câbles, treillis', title: 'Câble parabolique', inputs: ['L', 'f', 'q'], defs: { L: 50, f: 5, q: 10 }, kind: 'cable',
       icon: '<path d="M6 6 Q26 36 46 6"/><path class="tf" d="M6 6 l-2.6 -4 h5.2 z M46 6 l-2.6 -4 h5.2 z"/>' },
     { id: 'arc-flambement', group: 'Arcs, câbles, treillis', title: 'Flambement d\'un arc dans son plan', inputs: ['L', 'f', 'q'], defs: { L: 30, f: 6, q: 20 }, kind: 'arcbuck', numeric: true,
+      fix: v => { if (v.forme === 'circ') v.f = Math.min(v.f, v.L / 2); }, // au plus un demi-cercle
       icon: '<path d="M6 25 Q26 -5 46 25"/><path class="tq" d="M6 25 Q14 2 26 10 Q38 20 46 25"/><path class="tf" d="M6 25 l-2.6 4 h5.2 z M46 25 l-2.6 4 h5.2 z"/>' },
     { id: 'truss', group: 'Arcs, câbles, treillis', title: 'Poutre treillis — efforts globaux', inputs: ['L', 'h', 'q'], defs: { L: 24, h: 2.4, q: 20 }, kind: 'truss',
       icon: '<path d="M6 10 H46 M6 22 H46"/><path class="tl" d="M6 10 V22 M12.7 10 V22 M19.3 10 V22 M26 10 V22 M32.7 10 V22 M39.3 10 V22 M46 10 V22 M6 10 L12.7 22 M12.7 10 L19.3 22 M19.3 10 L26 22 M26 22 L32.7 10 M32.7 22 L39.3 10 M39.3 22 L46 10"/><path class="tf" d="M6 22 l-2.6 4 h5.2 z M46 22 l-2.6 4 h5.2 z"/>' },
@@ -434,7 +435,7 @@
       return {
         rows: [r('Réactions verticales', 'qL/2', V, 'kN'), r('Traction horizontale H', 'qL² / 8f', H, 'kN', 1),
           r('Traction max (ancrages)', '√(H² + V²)', Math.hypot(H, V), 'kN', 1),
-          r('Longueur du câble', 'L·(1 + 8/3·(f/L)²) — approchée', v.L * (1 + 8 / 3 * ratio ** 2), 'm'),
+          r('Longueur du câble', 'L/2·[√(1 + 16n²) + asinh(4n)/(4n)], n = f/L', 2 * S.parabolaHalfLength(v.L, v.f), 'm'),
           r('Rapport f/L', '1/8 à 1/12 — valeurs usuelles', `1/${S.fmt(1 / ratio, 1)}`, '')],
         eq: ['Même géométrie que l\'arc, efforts de signe opposé (traction pure)'],
         figs: [funicular(v, true)]
@@ -465,7 +466,7 @@
       const b = S.arcBuckling({ L: v.L, f: v.f, forme: v.forme, appuis: v.appuis, EI, NEd, r: rg });
       return {
         rows: [
-          r('Demi-longueur S', v.forme === 'circ' ? 'S = R·θ (demi-arc circulaire)' : 'S = L/2·(1 + 8/3·n² − 32/5·n⁴), n = f/L', b.S, 'm'),
+          r('Demi-longueur S', v.forme === 'circ' ? 'S = R·θ, θ = 2·atan(2f/L) (demi-arc circulaire)' : 'S = L/4·[√(1 + 16n²) + asinh(4n)/(4n)], n = f/L', b.S, 'm'),
           r('Effort critique N_cr', `π²EI / (β·S)², β = ${v.appuis === 'enc' ? '0,7' : '1'}`, b.Ncr, 'kN', 1),
           r('N_Ed au quart', 'H·√(1 + y\'²) en x = L/4, H = qL²/8f', NEd, 'kN'),
           r('α_cr', 'N_cr / N_Ed', b.alpha, '', 1),
@@ -633,16 +634,17 @@
 
   function portalRender(v, fixed) {
     const pb = S.secProps({ sec: v.sb }), pc = S.secProps({ sec: v.sc });
-    const k = (pb.I / pc.I) * (v.H / v.L), q = v.q, L = v.L, h = v.H;
+    // raideurs avec les modules : traverse et poteaux peuvent être de matériaux différents
+    const k = (pb.E * pb.I) / (pc.E * pc.I) * (v.H / v.L), q = v.q, L = v.L, h = v.H;
     let rows;
     if (!fixed) {
       const Hf = q * L * L / (4 * h * (2 * k + 3));
-      rows = [r('Rapport de raideurs k', '(I_t / I_p)·(h / L)', k, ''), r('Poussée H', 'qL² / 4h(2k + 3)', Hf, 'kN', 1),
+      rows = [r('Rapport de raideurs k', '(E_t·I_t / E_p·I_p)·(h / L)', k, ''), r('Poussée H', 'qL² / 4h(2k + 3)', Hf, 'kN', 1),
         r('Moment aux angles', '−H·h', -Hf * h, 'kN·m', 1), r('Moment en travée', 'qL²/8 − H·h', q * L * L / 8 - Hf * h, 'kN·m'),
         r('Réactions verticales', 'qL/2', q * L / 2, 'kN')];
     } else {
       const Mc = -q * L * L / (6 * (k + 2)), Mb = q * L * L / (12 * (k + 2));
-      rows = [r('Rapport de raideurs k', '(I_t / I_p)·(h / L)', k, ''), r('Moment aux angles', '−qL² / 6(k + 2)', Mc, 'kN·m', 1),
+      rows = [r('Rapport de raideurs k', '(E_t·I_t / E_p·I_p)·(h / L)', k, ''), r('Moment aux angles', '−qL² / 6(k + 2)', Mc, 'kN·m', 1),
         r('Moment en pied', 'qL² / 12(k + 2)', Mb, 'kN·m'), r('Moment en travée', 'qL²/8 + M_angles', q * L * L / 8 + Mc, 'kN·m'),
         r('Poussée H', '3·M_pied / h', 3 * Mb / h, 'kN', 1), r('Réactions verticales', 'qL/2', q * L / 2, 'kN')];
     }
@@ -756,7 +758,8 @@
     const rows = [r('Aire A', '', Acm, 'cm²'), r('Inertie I_y', FORM[sh], Icm, 'cm⁴', 1), r('Module W_el,y', 'I / (h/2)', W, 'cm³', 1),
       r('Rayon de giration i_y', '√(I/A)', Math.sqrt(Icm / Acm), 'cm'), r('Inertie I_z (axe faible)', '', Izcm, 'cm⁴'),
       r('Masse linéique', `ρ ≈ ${S.fmt(m.rho * 1000 / 9.81, 0)} kg/m³`, m.rho * Acm * 1e-4 * 1000 / 9.81, 'kg/m'),
-      r('Moment résistant élastique', 'W·f', W * m.fy / 1000, 'kN·m')];
+      // béton armé : la résistance en flexion dépend des armatures (EC2), W·f n'a pas de sens ; bois, acier : valeur caractéristique
+      v.mat === 'beton' ? null : r('Moment élastique caractéristique M_el,k', v.mat === 'acier' || v.mat === 'alu' ? 'W·f_y' : 'W·f_m,k — sans k_mod ni γ_M', W * m.fy / 1000, 'kN·m')].filter(Boolean);
     const Wd = FW, Hd = 290, sc = Math.min(220 / b, 230 / h), cx = Wd / 2, cy = Hd / 2;
     const g = sv('svg', { viewBox: `0 0 ${Wd} ${Hd}`, class: 'diag' });
     const R = (x, y, w, hh) => `M${cx + x * sc} ${cy + y * sc} h${w * sc} v${hh * sc} h${-w * sc} Z `;
@@ -776,6 +779,6 @@
     g.append(sv('text', { x: cx + b / 2 * sc + 34, y: cy + 4, class: 'fx' }, 'y'));
     g.append(sv('text', { x: cx, y: cy - h / 2 * sc - 10, class: 'fx', 'text-anchor': 'middle' }, `b = ${S.fmt(b)} mm`));
     g.append(sv('text', { x: cx - b / 2 * sc - 12, y: cy + 4, class: 'fx', 'text-anchor': 'end' }, `h = ${S.fmt(h)} mm`));
-    return { rows, note: 'L\'inertie croît comme le cube de la hauteur : doubler h multiplie I par 8, d\'où l\'efficacité des sections hautes et des profils en I.', figs: [g] };
+    return { rows, note: 'L\'inertie croît comme le cube de la hauteur : doubler h multiplie I par 8, d\'où l\'efficacité des sections hautes et des profils en I.' + (v.mat === 'beton' ? ' Béton armé : le moment résistant dépend des armatures (section, position, nuance) et se calcule à l\'ELU selon l\'Eurocode 2 ; il n\'est pas affiché ici.' : ''), figs: [g] };
   }
 })(window.S);

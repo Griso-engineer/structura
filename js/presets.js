@@ -236,6 +236,8 @@
     build: p => {
       const n = 16, nodes = [], elems = [], eloads = [];
       const sup = kind === 'enc' ? 'encastrement' : 'rotule';
+      // un arc de cercle au-delà du demi-cercle ne retombe plus sur ses appuis : f est limitée à L/2
+      if (p.forme === 'circ' && p.f > p.L / 2) p.f = p.L / 2;
       const R = (p.L * p.L / 4 + p.f * p.f) / (2 * p.f);
       const y = x => p.forme === 'circ' ? Math.sqrt(Math.max(0, R * R - (x - p.L / 2) ** 2)) - (R - p.f) : 4 * p.f * x * (p.L - x) / p.L ** 2;
       for (let i = 0; i <= n; i++) {

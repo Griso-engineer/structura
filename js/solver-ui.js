@@ -350,7 +350,7 @@
     dom.arc.append(el('div', { class: 'arc-check' },
       el('div', { class: 'vh' }, el('h3', {}, 'Flambement de l\'arc dans son plan'), el('small', {}, 'méthode D. Bitar (CTICM, 2020)')),
       el('div', { class: 'kpis' },
-        k('Demi-longueur S', `${S.fmt(b.S, 2)} m`, p.forme === 'circ' ? 'arc circulaire : S = R·θ' : 'S = L/2·(1 + 8/3·n² − 32/5·n⁴)'),
+        k('Demi-longueur S', `${S.fmt(b.S, 2)} m`, p.forme === 'circ' ? 'arc circulaire : S = R·θ, θ = 2·atan(2f/L)' : 'S = L/4·[√(1 + 16n²) + asinh(4n)/(4n)]'),
         k('Effort critique Ncr', `${S.fmt(b.Ncr, 0)} kN`, `π²EI / (β·S)², β = ${S.fmt(b.beta, 1)}`),
         k('NEd au quart', `${S.fmt(NEd, 0)} kN`, 'compression en x = L/4'),
         k('αcr = Ncr / NEd', S.fmt(b.alpha, 1), 'seuils : 3 et 10'),
