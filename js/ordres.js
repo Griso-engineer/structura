@@ -20,7 +20,7 @@
     root.append(el('div', { class: 'page' },
       S.blockHead('04', 'Ordres de grandeur', 'Les valeurs qui permettent de dessiner juste dès l\'esquisse : portées et élancements selon le matériau, comportement des matériaux, charges permanentes et d\'exploitation. Ce sont des fourchettes de pré-conception, à confirmer par le calcul.'),
       nav,
-      sec('portees', 'Portées et élancements par matériau', 'Domaine de portée usuel de chaque système (échelle logarithmique) et élancement classique correspondant. Cliquez sur un nom pour ouvrir la fiche de la typologie.', portees()),
+      sec('portees', 'Portées et élancements par matériau', 'Chaque système dessiné à l\'échelle pour une portée typique, avec son domaine de portées usuel et son élancement classique. Cliquez sur un nom pour ouvrir la fiche de la typologie.', portees()),
       sec('materiaux', 'Matériaux', 'Comment se comportent les quatre matériaux de structure courants, ce qu\'ils pèsent et comment ils se comparent.', materiaux()),
       sec('permanentes', 'Ordres de grandeur des charges permanentes', 'Poids propres des planchers, revêtements, couvertures et façades. Rappel : 100 kg/m² ≈ 1 kN/m².', poids()),
       sec('charges', 'Charges d\'exploitation', 'Ce que représente concrètement une charge d\'exploitation : 1 kN/m² ≈ 100 kg sur chaque mètre carré, soit une personne et quart.', usages())));
@@ -28,46 +28,115 @@
 
   // ------------------------------------------------------------------ portées et élancements
   const MATS = [['bois', 'Bois'], ['acier', 'Acier'], ['beton', 'Béton'], ['textile', 'Câbles et textiles']];
+  /* Élévation d'un système dessinée à l'échelle de l'axe des portées (unités : mètres, y vers le bas).
+     La longueur du dessin est une portée typique, sa hauteur l'élancement classique. */
+  const KIND = {
+    console: 'cant', fink: 'tri', 'ferme-triangulee': 'tri', ciseaux: 'tri', polonceau: 'tri', trapezoidale: 'truss',
+    bowstring: 'bow', lenticulaire: 'lens', 'arc-sous-tendu': 'bow', 'beam-string': 'bow', 'portique-versants': 'pframe',
+    'portique-triarticule': 'pframe', 'reins-courbes': 'pframe', gonflable: 'arch', 'arc-tirant': 'archtie', toile: 'cable', roue: 'cable', resille: 'cable'
+  };
+  const FAM_KIND = { poutres: 'beam', treillis: 'truss', soustendues: 'under', planchers: 'slab', arcs: 'arch', portiques: 'frame', plissees: 'fold', coques: 'arch', tendues: 'cable' };
+  const kindOf = t => KIND[t.id] || FAM_KIND[t.fam] || 'beam';
+  const mean = a => a.reduce((s, x) => s + x, 0) / a.length;
+  // élancement L/x (hauteur) et montée f/L lus dans le texte de la ligne
+  function proportions(lh, kind) {
+    const H = lh.match(/H ≈ L\/(\d+)/), Ls = [...lh.matchAll(/[LD]\/(\d+)/g)].map(m => +m[1]);
+    const fl = lh.match(/f\s*\/\s*L\s*(?:=|≈)?\s*1\/(\d+)(?:\s*–\s*1\/(\d+))?/), fd = lh.match(/f\/L ≥ (\d+),(\d+)/);
+    const depth = H ? +H[1] : Ls.length ? mean(Ls.slice(0, 2)) : { truss: 12, tri: 5, frame: 30, pframe: 30, fold: 10 }[kind] || 20;
+    const rise = fl ? mean([+fl[1], +(fl[2] || fl[1])]) : fd ? 1 / +`0.${fd[2]}` : { cable: 10, arch: 5 }[kind] || 6;
+    return { r: depth, f: rise };
+  }
+  function elevation(kind, s, lh) {
+    const { r, f } = proportions(lh, kind), d = s / r, out = [];
+    const P = (pts, cls = 'e') => out.push(`<path class="${cls}" d="M${pts.map(p => p.map(v => +v.toFixed(3)).join(' ')).join('L')}"/>`);
+    const curve = (fy, n = 24) => Array.from({ length: n + 1 }, (_, i) => [s * i / n, fy(s * i / n)]);
+    const pin = (x, y = 0) => { const k = 0.55; P([[x, y], [x - k, y + k * 1.4], [x + k, y + k * 1.4], [x, y]], 'su'); };
+    const para = (x, a) => -4 * a * x * (s - x) / (s * s);
+    const box = (y0, y1) => P([[0, y0], [s, y0], [s, y1], [0, y1], [0, y0]], 'eb');
+    if (kind === 'beam' || kind === 'slab') { box(-d, 0); pin(0); pin(s); }
+    else if (kind === 'cant') { box(-d, 0); P([[0, -d - 0.8], [0, 0.8]], 'su'); }
+    else if (kind === 'truss') {
+      const n = Math.max(2, Math.min(16, Math.round(s / d))), w = s / n;
+      P([[0, -d], [s, -d]]); P([[0, 0], [s, 0]]);
+      for (let i = 0; i < n; i++) { P([[i * w, 0], [i * w, -d]]); P(i % 2 ? [[i * w, -d], [(i + 1) * w, 0]] : [[i * w, 0], [(i + 1) * w, -d]]); }
+      P([[s, 0], [s, -d]]); pin(0); pin(s);
+    } else if (kind === 'tri') {
+      P([[0, 0], [s / 2, -d], [s, 0], [0, 0]]);
+      [0.25, 0.75].forEach(x => P([[x * s, 0], [x * s, -2 * d * Math.min(x, 1 - x)]]));
+      P([[s / 4, 0], [s / 2, -d], [3 * s / 4, 0]]); pin(0); pin(s);
+    } else if (kind === 'bow' || kind === 'lens') {
+      const top = curve(x => para(x, kind === 'lens' ? d / 2 : d)), bot = kind === 'lens' ? curve(x => -para(x, d / 2)) : [[0, 0], [s, 0]];
+      P(top); P(bot);
+      for (let i = 1; i < 8; i++) { const x = s * i / 8; P([[x, para(x, kind === 'lens' ? d / 2 : d)], [x, kind === 'lens' ? -para(x, d / 2) : 0]]); }
+      pin(0); pin(s);
+    } else if (kind === 'under') {
+      const t = Math.max(s / 30, d * 0.25);
+      box(-t, 0); P([[0, 0], [s / 3, d - t], [2 * s / 3, d - t], [s, 0]]); P([[s / 3, 0], [s / 3, d - t]]); P([[2 * s / 3, 0], [2 * s / 3, d - t]]);
+      pin(0); pin(s);
+    } else if (kind === 'arch' || kind === 'archtie') { P(curve(x => para(x, s / f)), 'ea'); if (kind === 'archtie') P([[0, 0], [s, 0]], 'ec'); pin(0); pin(s); }
+    else if (kind === 'cable') {
+      const a = s / f, m = a * 1.4;
+      P([[0, 0], [0, -m]]); P([[s, 0], [s, -m]]); P(curve(x => -m - para(x, a)), 'ec');
+      P([[0, -m], [-a, 0]], 'su'); P([[s, -m], [s + a, 0]], 'su');
+    } else if (kind === 'frame' || kind === 'pframe') {
+      const hp = Math.min(7, Math.max(3, s * 0.25)), rise = kind === 'pframe' ? s * 0.12 : 0;
+      P([[0, 0], [0, -hp]], 'ef'); P([[s, 0], [s, -hp]], 'ef');
+      P([[0, -hp], [s / 2, -hp - rise], [s, -hp]], 'ef');
+      if (d > 0.15) P([[0, -hp - d], [s / 2, -hp - rise - d], [s, -hp - d]], 'e');
+      pin(0); pin(s);
+    } else if (kind === 'fold') {
+      const n = Math.max(2, Math.round(s / (d * 1.4)) * 2), w = s / n;
+      P(Array.from({ length: n + 1 }, (_, i) => [i * w, i % 2 ? -d : 0])); pin(0); pin(s);
+    }
+    return out.join('');
+  }
+
   function portees() {
     const st = { mat: 'bois' };
     const box = el('div');
     const chips = el('div', { class: 'chips', style: 'margin-bottom:14px' });
-    const lo = Math.log10(0.5), hi = Math.log10(2000);
-    const pos = v => (Math.log10(Math.max(v, 0.5)) - lo) / (hi - lo) * 100;
-    const ticks = [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000];
     function render() {
       chips.innerHTML = '';
       MATS.forEach(([k, l]) => chips.append(el('button', { class: 'chip' + (st.mat === k ? ' on' : ''), onclick: () => { st.mat = k; render(); } }, l)));
+      // axe linéaire, commun à toutes les lignes d'un matériau : les dessins sont comparables entre eux
+      const MAX = st.mat === 'textile' ? 150 : 60, step = MAX > 60 ? 25 : 5;
+      const pos = v => Math.min(v, MAX) / MAX * 100;
+      const ticks = Array.from({ length: MAX / step + 1 }, (_, i) => i * step);
       const rows = [];
       S.TYPOLOGIES.forEach(t => t.rows.filter(r => r[0] === st.mat).forEach(r => rows.push({ t, v: r[1], sp: r[2], lh: r[3] })));
       rows.sort((a, b) => a.sp[1] - b.sp[1] || a.sp[0] - b.sp[0]);
-      // une ligne : nom, barre de portées précédée des schémas 2D et 3D (après la barre si elle commence trop à gauche)
       const row = ({ t, v, sp, lh }) => {
-        const x0 = pos(sp[0]);
-        return el('div', { class: 'rc-row wide' },
+        const typ = Math.min(Math.sqrt(sp[0] * sp[1]), MAX * 0.97), kind = kindOf(t);
+        const g = elevation(kind, typ, lh);
+        // hauteur du dessin : bornes verticales de l'élévation, en mètres
+        const ys = [...g.matchAll(/[ML]([-\d.]+) ([-\d.]+)/g)].map(m => +m[2]);
+        const top = Math.min(-0.5, ...ys) - 0.4, bot = Math.max(0.9, ...ys) + 0.2;
+        const over = sp[1] > MAX;
+        return el('div', { class: 'sc-row' },
           el('a', { class: 'nm', href: '#/typologies/' + t.id, title: `${t.name} — ${v}` }, t.name, el('small', {}, v)),
-          el('div', { class: 'rc-track' }, ticks.map(x => el('i', { class: 'rc-grid', style: `left:${pos(x)}%` })),
-            el('div', { class: 'rc-bar mat-' + st.mat, style: `left:${x0}%;width:${Math.max(0.8, pos(sp[1]) - x0)}%` },
-              el('div', { class: 'rc-ico' + (x0 < 26 ? ' after' : '') + (S.typoStatic(t) ? '' : ' solo'), title: t.name },
-                S.typoStatic(t) ? el('div', { class: 'rc-2d', html: S.typoStatic(t) }) : null,
-                el('div', { class: 'rc-3d', html: `<svg class="icon" viewBox="0 0 200 120" aria-hidden="true">${t.svg}</svg>` })),
-              el('span', {}, `${S.fmt(sp[0])}–${S.fmt(sp[1])} m`))),
+          el('div', { class: 'sc-3d', title: t.name, html: `<svg class="icon" viewBox="0 0 200 120" aria-hidden="true">${t.svg}</svg>` }),
+          el('div', { class: 'sc-track' }, ticks.map(x => el('i', { class: 'rc-grid', style: `left:${pos(x)}%` })),
+            el('div', { class: 'sc-el', html: `<svg viewBox="0 ${top.toFixed(2)} ${MAX} ${(bot - top).toFixed(2)}" preserveAspectRatio="xMinYMax meet" aria-hidden="true">${g}</svg>` }),
+            el('div', { class: 'sc-band' },
+              el('div', { class: 'sc-range mat-' + st.mat + (over ? ' over' : ''), style: `left:${pos(sp[0])}%;width:${Math.max(0.6, pos(sp[1]) - pos(sp[0]))}%` }),
+              // libellé après la barre, ou avant elle si elle atteint le bord droit
+              el('span', { style: pos(sp[1]) > 80 ? `right:${100 - pos(sp[0])}%;margin:0 6px 0 0` : `left:${pos(sp[1])}%` }, `${S.fmt(sp[0])}–${S.fmt(sp[1])} m${over ? ' →' : ''}`))),
           el('span', { class: 'lh' }, lh));
       };
       box.innerHTML = '';
       box.append(el('div', { class: 'range-chart' },
-        el('div', { class: 'rc-row wide rc-head' }, el('span', {}, 'Système'), el('span', {}, 'Portées usuelles'), el('span', {}, 'Élancement classique')),
+        el('div', { class: 'sc-row sc-head' }, el('span', {}, 'Système'), el('span'), el('span', {}, 'Portée typique dessinée à l\'échelle ; barre : domaine de portées'), el('span', {}, 'Élancement classique')),
         // regroupement par famille, dans l'ordre de la page Typologies
         S.TYPO_FAMILIES.map(([id, name]) => {
           const fr = rows.filter(r => r.t.fam === id);
           return fr.length ? [el('div', { class: 'rc-fam' }, name), fr.map(row)] : null;
         }),
-        el('div', { class: 'rc-axis wide' }, ticks.map(x => el('span', { style: `left:${pos(x)}%` }, `${x} m`)))));
+        el('div', { class: 'sc-axis' }, el('span'), el('span'), el('div', {}, ticks.map(x => el('span', { style: `left:${pos(x)}%` }, `${x}${x === MAX ? ' m' : ''}`))), el('span'))));
       if (!rows.length) box.append(el('p', { class: 'muted' }, 'Aucun système pour ce matériau.'));
     }
     render();
     return el('div', {}, chips, box,
-      el('p', { class: 'muted', style: 'font-size:12.5px;margin-top:10px' }, 'L = portée, h = hauteur de la section, H = hauteur maximale, f = flèche (montée) d\'un arc ou d\'un câble. Bois lamellé-collé : Glulam Handbook, tableau 3.1 (entraxe ≈ 6 m, charge variable ≈ 3 kN/m²).'));
+      el('p', { class: 'muted', style: 'font-size:12.5px;margin-top:10px' }, 'Chaque système est dessiné en élévation à l\'échelle de l\'axe : sa longueur est une portée typique (moyenne géométrique du domaine), sa hauteur l\'élancement classique. La barre colorée indique le domaine de portées usuel ; une flèche signale qu\'il se prolonge au-delà de l\'axe. L = portée, h = hauteur de la section, H = hauteur maximale, f = flèche (montée) d\'un arc ou d\'un câble. Sources : Glulam Handbook (bois lamellé-collé) ; Construire en acier (Le Moniteur) ; Schodek et Bechthold, Structures ; cours de structures A. Zonco (EAVT).'));
   }
 
   // ------------------------------------------------------------------ charges permanentes
