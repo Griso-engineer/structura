@@ -367,25 +367,25 @@
 
     // ================================================================ Poutres treillis
     T_('pratt', 'treillis', 'Treillis Pratt', ['acier', 'bois'], [
-      ['acier', 'Membrures parallèles', [15, 100], 'L/10 – L/15'], ['bois', 'Lamellé-collé, membrures parallèles', [25, 85], 'L/12']],
+      ['acier', 'Membrures parallèles', [8, 100], 'L/10 – L/23'], ['bois', 'Lamellé-collé, membrures parallèles', [25, 85], 'L/12']],
       'Montants comprimés et diagonales tendues, inclinées vers le centre. Les barres longues (diagonales) travaillent en traction : pas de flambement.',
       ['Diagonales tendues : barres fines possibles (ronds, câbles)', 'Montants courts comprimés'],
       ['Assemblages tendus plus délicats en bois'],
       ['Ponts ferroviaires', 'Halles industrielles'], { preset: 'pratt' }),
     T_('howe', 'treillis', 'Treillis Howe', ['bois', 'acier'], [
-      ['bois', 'Lamellé-collé, membrures parallèles', [25, 85], 'L/12'], ['acier', 'Membrures parallèles', [15, 80], 'L/10 – L/15']],
+      ['bois', 'Lamellé-collé, membrures parallèles', [25, 85], 'L/12'], ['acier', 'Membrures parallèles', [8, 80], 'L/10 – L/23']],
       'Inverse du Pratt : diagonales comprimées (inclinées vers les appuis), montants tendus. Historiquement utilisé en bois car les diagonales s\'assemblent simplement par contact.',
       ['Assemblages par contact (bois)', 'Montants tendus en acier possibles'],
       ['Diagonales longues comprimées : risque de flambement'],
       ['Ponts couverts en bois', 'Charpentes'], { preset: 'howe' }),
     T_('warren', 'treillis', 'Treillis Warren', ['acier', 'bois'], [
-      ['acier', 'Tubes ou cornières', [15, 80], 'L/10 – L/15'], ['bois', 'Lamellé-collé', [25, 60], 'L/12']],
+      ['acier', 'Tubes ou cornières', [8, 80], 'L/10 – L/23'], ['bois', 'Lamellé-collé', [25, 60], 'L/12']],
       'Diagonales alternées formant des triangles isocèles, sans montants : chaque diagonale travaille alternativement en traction et en compression.',
       ['Peu de barres, nœuds répétitifs', 'Aspect régulier et léger'],
       ['Membrure fléchie si les charges ne sont pas aux nœuds'],
       ['Passerelles', 'Poutres de toiture'], { preset: 'warren' }),
     T_('warren-montants', 'treillis', 'Warren à montants', ['acier', 'bois'], [
-      ['acier', 'Membrures parallèles', [15, 80], 'L/10 – L/15'], ['bois', 'Lamellé-collé', [25, 60], 'L/12']],
+      ['acier', 'Membrures parallèles', [8, 80], 'L/10 – L/23'], ['bois', 'Lamellé-collé', [25, 60], 'L/12']],
       'Treillis Warren complété par des montants qui recoupent la membrure chargée : les pannes peuvent être posées à chaque nœud.',
       ['Membrure supérieure moins fléchie', 'Pas de pannes plus serré'],
       ['Plus de barres et d\'assemblages'],
@@ -517,13 +517,13 @@
 
     // ================================================================ Arcs
     T_('arc', 'arcs', 'Arc bi-articulé', ['acier', 'beton', 'bois'], [
-      ['bois', 'Lamellé-collé, f/L ≥ 0,14', [20, 100], 'h ≈ L/50'], ['acier', 'Profilés, caissons', [30, 550], 'f/L = 1/5 – 1/8 ; h ≈ L/50 – L/80'],
+      ['bois', 'Lamellé-collé, f/L ≥ 0,14', [20, 100], 'h ≈ L/50'], ['acier', 'Profilés, caissons (bâtiment)', [15, 60], 'f/L = 1/10 – 1/2 ; h ≈ L/30 – L/50'], ['acier', 'Caissons (grands ouvrages)', [60, 550], 'f/L = 1/5 – 1/8 ; h ≈ L/50 – L/80'],
       ['beton', 'Béton armé', [30, 300], 'f/L = 1/5 – 1/8 ; e ≈ L/40 – L/60']],
       'Élément courbe comprimé articulé aux naissances. Sous charge uniforme, la parabole est funiculaire : la flexion disparaît. La poussée H = qL²/8f doit être reprise par les appuis.',
       ['Exploite la compression', 'Très grandes portées'], ['Poussées aux appuis', 'Flexion sous charges dissymétriques', 'Flambement'],
       ['Viaduc de Garabit (G. Eiffel, 1884)', 'Pont du Gard'], { preset: 'arc' }),
     T_('arc-3art', 'arcs', 'Arc à trois articulations', ['bois', 'acier', 'beton'], [
-      ['bois', 'Lamellé-collé, f/L ≥ 0,14', [20, 100], 'h ≈ L/50'], ['acier', 'Profilés', [20, 150], 'h ≈ L/50 – L/70'], ['beton', 'Béton armé', [30, 100], 'e ≈ L/40']],
+      ['bois', 'Lamellé-collé, f/L ≥ 0,14', [20, 100], 'h ≈ L/50'], ['acier', 'Profilés', [15, 60], 'f/L = 1/10 – 1/2 ; h ≈ L/30 – L/50'], ['beton', 'Béton armé', [30, 100], 'e ≈ L/40']],
       'Arc articulé aux naissances et à la clé : isostatique, il absorbe sans contraintes les tassements et dilatations et se monte en deux demi-arcs.',
       ['Calcul simple', 'Insensible aux mouvements d\'appui', 'Transport facilité'], ['Articulation de clé', 'Plus déformable'],
       ['Pont de Salginatobel (R. Maillart, 1930)', 'Halles en lamellé-collé'], { preset: 'arc-3art' }),
@@ -531,7 +531,7 @@
       'Arc encastré à ses naissances : plus rigide et plus stable au flambement, mais les fondations reprennent aussi des moments.',
       ['Rigidité maximale', 'Flambement repoussé'], ['Fondations très sollicitées', 'Sensible aux tassements'],
       ['Grands ponts en arc en béton'], { preset: 'arc-encastre' }),
-    T_('arc-tirant', 'arcs', 'Arc à tirant', ['acier', 'bois', 'beton'], [['acier', 'Arc + tirant (bow-string)', [30, 250], 'f/L = 1/6 – 1/8'], ['bois', 'Arc lamellé-collé + tirant acier', [20, 80], 'h ≈ L/50']],
+    T_('arc-tirant', 'arcs', 'Arc à tirant', ['acier', 'bois', 'beton'], [['acier', 'Arc cintré sur appuis, avec tirant', [8, 30], 'H/L = 1/10 – 1/2'], ['acier', 'Arc + tirant (bow-string, grands ouvrages)', [30, 250], 'f/L = 1/6 – 1/8'], ['bois', 'Arc lamellé-collé + tirant acier', [20, 80], 'h ≈ L/50']],
       'Un tirant relie les naissances et équilibre la poussée : les appuis ne reprennent plus que des efforts verticaux.',
       ['Aucune poussée aux appuis', 'Pose sur poteaux ou murs'], ['Le tirant traverse l\'espace'],
       ['Ponts bow-string', 'Halles'], { preset: 'arc-tirant' }),
@@ -567,19 +567,19 @@
       ['Pavillon des États-Unis, Osaka (1970)']),
 
     // ================================================================ Portiques
-    T_('portique-encastre', 'portiques', 'Portique encastré', ['acier', 'beton', 'bois'], [['acier', 'Profilés', [10, 40], 'traverse L/25 – L/35'], ['beton', 'Béton armé', [6, 20], 'traverse L/12 – L/15']],
+    T_('portique-encastre', 'portiques', 'Portique encastré', ['acier', 'beton', 'bois'], [['acier', 'Profilés', [10, 30], 'traverse L/30 – L/40'], ['beton', 'Béton armé', [6, 20], 'traverse L/12 – L/15']],
       'Poteaux et traverse liés par des nœuds rigides, pieds encastrés : le cadre est stable seul vis-à-vis des actions horizontales.',
       ['Pas de contreventement nécessaire', 'Faible déplacement latéral'], ['Fondations sollicitées en moment', 'Hyperstatique'],
       ['Bâtiments industriels', 'Ossatures béton'], { preset: 'portique' }),
-    T_('portique-biarticule', 'portiques', 'Portique bi-articulé', ['acier', 'bois', 'beton'], [['acier', 'Profilés avec jarrets', [15, 60], 'traverse L/30 – L/40'], ['bois', 'Lamellé-collé', [15, 40], 'L/30']],
+    T_('portique-biarticule', 'portiques', 'Portique bi-articulé', ['acier', 'bois', 'beton'], [['acier', 'Profilés avec jarrets', [15, 40], 'traverse L/30 – L/50'], ['acier', 'Portique à treillis (traverse et montants triangulés)', [15, 40], 'h ≈ L/15 – L/30'], ['bois', 'Lamellé-collé', [15, 40], 'L/30']],
       'Angles rigides et pieds articulés : le système le plus courant des halles métalliques. Fondations simples, poussée en pied.',
       ['Fondations économiques', 'Préfabrication'], ['Moments importants aux angles'],
       ['Entrepôts, gymnases'], { preset: 'portique' }),
-    T_('portique-triarticule', 'portiques', 'Portique à trois articulations', ['bois', 'acier', 'beton'], [['bois', 'Reins assemblés par entures', [15, 25], 'h ≈ (s₁ + s₂)/13'], ['acier', 'Profilés', [20, 120], 'L/30 – L/50']],
+    T_('portique-triarticule', 'portiques', 'Portique à trois articulations', ['bois', 'acier', 'beton'], [['bois', 'Reins assemblés par entures', [15, 25], 'h ≈ (s₁ + s₂)/13'], ['acier', 'Profilés', [15, 50], 'L/30 – L/50']],
       'Deux demi-portiques articulés en pied et au faîtage : isostatique, transportable en deux éléments.',
       ['Insensible aux tassements', 'Calcul simple'], ['Poussée aux appuis', 'Moments aux angles'],
       ['Galerie des machines (Paris, 1889, 115 m)'], { preset: 'tri-articule' }),
-    T_('portique-versants', 'portiques', 'Portique à deux versants', ['acier', 'bois'], [['acier', 'Arbalétriers avec jarrets', [12, 60], 'L/40 – L/50'], ['bois', 'Lamellé-collé', [15, 40], 'L/30']],
+    T_('portique-versants', 'portiques', 'Portique à deux versants', ['acier', 'bois'], [['acier', 'Arbalétriers avec jarrets', [12, 40], 'L/40 – L/50'], ['bois', 'Lamellé-collé', [15, 40], 'L/30']],
       'Traverse brisée en deux arbalétriers formant la pente de toiture ; l\'effet d\'arc réduit les moments.',
       ['Évacuation des eaux et de la neige', 'Système industrialisé'], ['Poussée', 'Déversement des arbalétriers'],
       ['Bâtiments agricoles et industriels'], { preset: 'deux-versants' }),
