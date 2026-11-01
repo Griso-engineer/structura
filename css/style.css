@@ -724,3 +724,5 @@ svg.icon .hid { stroke: none; fill: none; }
 .sc-axis > div { position: relative; }
 .sc-axis > div span { position: absolute; transform: translateX(-50%); }
 @media (max-width: 860px) { .sc-row, .sc-axis { grid-template-columns: 110px minmax(0, 1fr); } .sc-row .sc-3d, .sc-axis > span:nth-child(2) { display: none; } .sc-row .lh { grid-column: 2; } .sc-axis > span:last-child { display: none; } }
+.sc-el .eh { fill: var(--paper); stroke: var(--ink); stroke-width: 1.1; vector-effect: non-scaling-stroke; }
+.sc-el { clip-path: inset(-40px 0 -40px -40px); }

@@ -19,12 +19,15 @@
   // Modèle statique associé à la typologie (celui du solveur, sans charges)
   const STATIC_ALIAS = { 'inertie-variable': 'isostatique' };
   const STATIC_PARAMS = { 'portique-biarticule': { base: 'rotule' }, 'portique-encastre': { base: 'encastrement' } };
-  const staticModel = t => {
+  // over : paramètres géométriques imposés (ex. portée et hauteur pour les ordres de grandeur)
+  const staticModel = (t, over) => {
     const id = t.preset || STATIC_ALIAS[t.id];
     if (!id || !S.PRESET[id]) return null;
-    const m = S.PRESET[id].build(Object.assign(S.presetDefaults(id), STATIC_PARAMS[t.id]));
+    const m = S.PRESET[id].build(Object.assign(S.presetDefaults(id), STATIC_PARAMS[t.id], over));
     return Object.assign({}, m, { nloads: [], eloads: [] });
   };
+  S.typoModel = staticModel;
+  S.typoPresetId = t => t.preset || STATIC_ALIAS[t.id] || null;
   const staticCache = {};
   S.typoStatic = t => (t.id in staticCache) ? staticCache[t.id] : (staticCache[t.id] = (m => m ? S.staticSvg(m) : '')(staticModel(t)));
   // les arcs se ressemblent en 3D : on met en avant leur schéma statique

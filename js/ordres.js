@@ -28,65 +28,109 @@
 
   // ------------------------------------------------------------------ portées et élancements
   const MATS = [['bois', 'Bois'], ['acier', 'Acier'], ['beton', 'Béton'], ['textile', 'Câbles et textiles']];
-  /* Élévation d'un système dessinée à l'échelle de l'axe des portées (unités : mètres, y vers le bas).
-     La longueur du dessin est une portée typique, sa hauteur l'élancement classique. */
-  const KIND = {
-    console: 'cant', fink: 'tri', 'ferme-triangulee': 'tri', ciseaux: 'tri', polonceau: 'tri', trapezoidale: 'truss',
-    bowstring: 'bow', lenticulaire: 'lens', 'arc-sous-tendu': 'bow', 'beam-string': 'bow', 'portique-versants': 'pframe',
-    'portique-triarticule': 'pframe', 'reins-courbes': 'pframe', gonflable: 'arch', 'arc-tirant': 'archtie', toile: 'cable', roue: 'cable', resille: 'cable'
-  };
-  const FAM_KIND = { poutres: 'beam', treillis: 'truss', soustendues: 'under', planchers: 'slab', arcs: 'arch', portiques: 'frame', plissees: 'fold', coques: 'arch', tendues: 'cable' };
-  const kindOf = t => KIND[t.id] || FAM_KIND[t.fam] || 'beam';
   const mean = a => a.reduce((s, x) => s + x, 0) / a.length;
-  // élancement L/x (hauteur) et montée f/L lus dans le texte de la ligne
-  function proportions(lh, kind) {
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+
+  // élancement L/x (hauteur de la section ou hauteur totale H) et montée f/L lus dans le texte de la ligne
+  function proportions(lh) {
     const H = lh.match(/H ≈ L\/(\d+)/), Ls = [...lh.matchAll(/[LD]\/(\d+)/g)].map(m => +m[1]);
-    const fl = lh.match(/f\s*\/\s*L\s*(?:=|≈)?\s*1\/(\d+)(?:\s*–\s*1\/(\d+))?/), fd = lh.match(/f\/L ≥ (\d+),(\d+)/);
-    const depth = H ? +H[1] : Ls.length ? mean(Ls.slice(0, 2)) : { truss: 12, tri: 5, frame: 30, pframe: 30, fold: 10 }[kind] || 20;
-    const rise = fl ? mean([+fl[1], +(fl[2] || fl[1])]) : fd ? 1 / +`0.${fd[2]}` : { cable: 10, arch: 5 }[kind] || 6;
-    return { r: depth, f: rise };
+    const fl = lh.match(/[fH]\s*\/\s*L\s*(?:=|≈)?\s*1\/(\d+)(?:\s*–\s*1\/(\d+))?/), fd = lh.match(/f\/L ≥ (\d+),(\d+)/);
+    return {
+      r: H ? +H[1] : Ls.length ? mean(Ls.slice(0, 2)) : null,
+      f: fl ? mean([+fl[1], +(fl[2] || fl[1])]) : fd ? 1 / +`0.${fd[2]}` : null
+    };
   }
-  function elevation(kind, s, lh) {
-    const { r, f } = proportions(lh, kind), d = s / r, out = [];
+
+  /* Géométrie imposée au modèle de la typologie (le même que sur la page Typologies) : portée typique s,
+     hauteur tirée de l'élancement. Les portiques gardent une hauteur de poteau réaliste. */
+  function modelParams(pid, s, r, f) {
+    const H = clamp(s * 0.3, 3, 7);
+    const P = {
+      isostatique: { L: s }, continue: { L: s }, gerber: { L: s }, console: { L: s },
+      fink: { L: s, h: s / (r || 5) }, ciseaux: { L: s, h: s / (r || 5) }, polonceau: { L: s, h: s / (r || 4) },
+      'beam-string': { L: s, h: s / (r || 10) / 2, s: s / (r || 10) / 2 },
+      arc: { L: s, f: s / (f || 6) }, 'arc-3art': { L: s, f: s / (f || 6) }, 'arc-encastre': { L: s, f: s / (f || 6) }, 'arc-tirant': { L: s, f: s / (f || 6) },
+      portique: { L: s, H }, 'tri-articule': { L: s, H, f: s * 0.15 }, 'deux-versants': { L: s, H, f: s * 0.08 },
+      'portique-jambes': { L: s, H, f: s * 0.1, k: clamp(s * 0.12, 1, 3) }, 'demi-portique': { L: s, H, f: s * 0.2, e: s * 0.1 }
+    };
+    return P[pid] || { L: s, h: s / (r || 12) };
+  }
+
+  /* Élévation dessinée à l'échelle de l'axe des portées (mètres, y vers le bas) : le modèle statique de la
+     typologie quand il existe, sinon un dessin de principe (dalles, câbles, coques, plis). */
+  function elevation(t, s, lh, v = '') {
+    const { r, f } = proportions(lh), out = [];
     const P = (pts, cls = 'e') => out.push(`<path class="${cls}" d="M${pts.map(p => p.map(v => +v.toFixed(3)).join(' ')).join('L')}"/>`);
-    const curve = (fy, n = 24) => Array.from({ length: n + 1 }, (_, i) => [s * i / n, fy(s * i / n)]);
     const pin = (x, y = 0) => { const k = 0.55; P([[x, y], [x - k, y + k * 1.4], [x + k, y + k * 1.4], [x, y]], 'su'); };
+    const fix = (x, y = 0) => { P([[x - 0.9, y], [x + 0.9, y]], 'su'); for (let i = -1; i <= 1; i++) P([[x + i * 0.6, y], [x + i * 0.6 - 0.4, y + 0.5]], 'su'); };
+    const curve = (fy, n = 24) => Array.from({ length: n + 1 }, (_, i) => [s * i / n, fy(s * i / n)]);
     const para = (x, a) => -4 * a * x * (s - x) / (s * s);
-    const box = (y0, y1) => P([[0, y0], [s, y0], [s, y1], [0, y1], [0, y0]], 'eb');
-    if (kind === 'beam' || kind === 'slab') { box(-d, 0); pin(0); pin(s); }
-    else if (kind === 'cant') { box(-d, 0); P([[0, -d - 0.8], [0, 0.8]], 'su'); }
-    else if (kind === 'truss') {
-      const n = Math.max(2, Math.min(16, Math.round(s / d))), w = s / n;
-      P([[0, -d], [s, -d]]); P([[0, 0], [s, 0]]);
-      for (let i = 0; i < n; i++) { P([[i * w, 0], [i * w, -d]]); P(i % 2 ? [[i * w, -d], [(i + 1) * w, 0]] : [[i * w, 0], [(i + 1) * w, -d]]); }
-      P([[s, 0], [s, -d]]); pin(0); pin(s);
-    } else if (kind === 'tri') {
-      P([[0, 0], [s / 2, -d], [s, 0], [0, 0]]);
-      [0.25, 0.75].forEach(x => P([[x * s, 0], [x * s, -2 * d * Math.min(x, 1 - x)]]));
-      P([[s / 4, 0], [s / 2, -d], [3 * s / 4, 0]]); pin(0); pin(s);
-    } else if (kind === 'bow' || kind === 'lens') {
-      const top = curve(x => para(x, kind === 'lens' ? d / 2 : d)), bot = kind === 'lens' ? curve(x => -para(x, d / 2)) : [[0, 0], [s, 0]];
-      P(top); P(bot);
-      for (let i = 1; i < 8; i++) { const x = s * i / 8; P([[x, para(x, kind === 'lens' ? d / 2 : d)], [x, kind === 'lens' ? -para(x, d / 2) : 0]]); }
-      pin(0); pin(s);
-    } else if (kind === 'under') {
-      const t = Math.max(s / 30, d * 0.25);
-      box(-t, 0); P([[0, 0], [s / 3, d - t], [2 * s / 3, d - t], [s, 0]]); P([[s / 3, 0], [s / 3, d - t]]); P([[2 * s / 3, 0], [2 * s / 3, d - t]]);
-      pin(0); pin(s);
-    } else if (kind === 'arch' || kind === 'archtie') { P(curve(x => para(x, s / f)), 'ea'); if (kind === 'archtie') P([[0, 0], [s, 0]], 'ec'); pin(0); pin(s); }
-    else if (kind === 'cable') {
-      const a = s / f, m = a * 1.4;
-      P([[0, 0], [0, -m]]); P([[s, 0], [s, -m]]); P(curve(x => -m - para(x, a)), 'ec');
-      P([[0, -m], [-a, 0]], 'su'); P([[s, -m], [s + a, 0]], 'su');
-    } else if (kind === 'frame' || kind === 'pframe') {
-      const hp = Math.min(7, Math.max(3, s * 0.25)), rise = kind === 'pframe' ? s * 0.12 : 0;
-      P([[0, 0], [0, -hp]], 'ef'); P([[s, 0], [s, -hp]], 'ef');
-      P([[0, -hp], [s / 2, -hp - rise], [s, -hp]], 'ef');
-      if (d > 0.15) P([[0, -hp - d], [s / 2, -hp - rise - d], [s, -hp - d]], 'e');
-      pin(0); pin(s);
-    } else if (kind === 'fold') {
+    const box = (x0, x1, y0, y1) => P([[x0, y0], [x1, y0], [x1, y1], [x0, y1], [x0, y0]], 'eb');
+    // portique à treillis : traverse et montants triangulés (variante sans modèle propre)
+    if (t.fam === 'portiques' && /treillis/i.test(v)) {
+      const d = s / (r || 20), H = clamp(s * 0.3, 3, 7), n = clamp(Math.round(s / d), 4, 16), w = s / n, m = Math.max(2, Math.round(H / d));
+      P([[0, 0], [0, -H - d], [s, -H - d], [s, 0]], 'ef'); P([[d, 0], [d, -H], [s - d, -H], [s - d, 0]], 'ef');
+      for (let i = 0; i < n; i++) P([[i * w, i % 2 ? -H : -H - d], [(i + 1) * w, i % 2 ? -H - d : -H]]);
+      [[0, d], [s, s - d]].forEach(([a, b]) => { for (let j = 0; j < m; j++) P([[j % 2 ? a : b, -H * j / m], [j % 2 ? b : a, -H * (j + 1) / m]]); });
+      pin(d / 2); pin(s - d / 2);
+      return out.join('');
+    }
+    const pid = S.typoPresetId(t), m = pid && S.typoModel(t, modelParams(pid, s, r, f));
+    if (m) {
+      const ns = m.nodes, xs = ns.map(n => n.x), x0 = Math.min(...xs), x1 = Math.max(...xs);
+      // poutres : section dessinée à sa hauteur réelle autour de la ligne moyenne
+      if (t.fam === 'poutres') {
+        const d = s / (r || 20);
+        if (t.id === 'inertie-variable') P([[x0, 0], [x1, 0], [x1, -d * 0.55], [(x0 + x1) / 2, -d * 1.15], [x0, -d * 0.55], [x0, 0]], 'eb');
+        else box(x0, x1, -d, 0);
+      } else m.elems.forEach(e => { const a = ns[e.n1 - 1], b = ns[e.n2 - 1]; P([[a.x, -a.y], [b.x, -b.y]], e.rel1 && e.rel2 ? 'e' : 'ef'); });
+      ns.forEach(n => {
+        if (n.sup === 'rotule' || n.sup === 'appui') pin(n.x, -n.y);
+        else if (n.sup === 'encastrement') fix(n.x, -n.y);
+      });
+      // articulations des éléments fléchis (comme sur la page Typologies)
+      const bar = e => e.rel1 && e.rel2, rc = Math.max(0.35, s * 0.012);
+      S.hingesOf(m).forEach(h => {
+        const n = ns[h.node], at = m.elems.filter(e => e.n1 - 1 === h.node || e.n2 - 1 === h.node);
+        if (h.toward != null || n.sup !== 'libre' || at.every(bar) || t.fam === 'poutres' && t.id !== 'gerber') return;
+        out.push(`<circle class="eh" cx="${n.x.toFixed(2)}" cy="${(-n.y).toFixed(2)}" r="${rc.toFixed(2)}"/>`);
+      });
+      return out.join('');
+    }
+    const d = s / (r || 20);
+    if (t.id === 'treillis-spatial') {
+      // coupe d'une nappe : nœuds inférieurs décalés d'une demi-maille, diagonales en V
+      const n = clamp(Math.round(s / d), 4, 20), w = s / n;
+      P([[0, -d], [s, -d]], 'ef'); P([[w / 2, 0], [s - w / 2, 0]], 'ef');
+      for (let i = 0; i < n; i++) P([[i * w, -d], [(i + 0.5) * w, 0], [(i + 1) * w, -d]]);
+      pin(0, -d); pin(s, -d);
+    } else if (t.id === 'arc-poteaux') {
+      const H = clamp(s * 0.15, 3, 6), a = s / (f || 6);
+      P([[0, 0], [0, -H]], 'ef'); P([[s, 0], [s, -H]], 'ef'); P(curve(x => -H + para(x, a)), 'ef'); P([[0, -H], [s, -H]], 'ec'); fix(0); fix(s);
+    } else if (t.id === 'reins-courbes') {
+      const H = clamp(s * 0.25, 3, 7), R = s * 0.12;
+      P([[0, 0], [0, -H + R], [R * 0.3, -H + R * 0.3], [R, -H], [s / 2, -H - s * 0.1], [s - R, -H], [s - R * 0.3, -H + R * 0.3], [s, -H + R], [s, 0]], 'ef'); pin(0); pin(s);
+    } else if (t.fam === 'planchers') {
+      box(0, s, -d, 0); pin(0); pin(s);
+    } else if (t.id === 'poutre-cable' || t.id === 'roue') {
+      const a = s / (f || 14), H = a * 2.2;
+      P([[0, 0], [0, -H]], 'ef'); P([[s, 0], [s, -H]], 'ef');
+      P(curve(x => -H / 2 + a + para(x, a)), 'ec'); P(curve(x => -H / 2 - a - para(x, a)), 'ec');
+      for (let i = 1; i < 8; i++) { const x = s * i / 8; P([[x, -H / 2 + a + para(x, a)], [x, -H / 2 - a - para(x, a)]]); }
+      fix(0); fix(s);
+    } else if (t.fam === 'tendues' && t.id !== 'gonflable') {
+      const a = s / (f || r || 10), H = a * 1.5;
+      P([[0, 0], [0, -H]], 'ef'); P([[s, 0], [s, -H]], 'ef'); P(curve(x => -H - para(x, a)), 'ec');
+      P([[0, -H], [-a, 0]], 'su'); P([[s, -H], [s + a, 0]], 'su');
+    } else if (t.id === 'sheds') {
+      const n = Math.max(2, Math.round(s / 6)), w = s / n, h = s / (r || 9);
+      P(Array.from({ length: n }, (_, i) => [[i * w, 0], [i * w, -h], [(i + 1) * w, 0]]).flat(), 'ef'); pin(0); pin(s);
+    } else if (t.fam === 'plissees') {
       const n = Math.max(2, Math.round(s / (d * 1.4)) * 2), w = s / n;
-      P(Array.from({ length: n + 1 }, (_, i) => [i * w, i % 2 ? -d : 0])); pin(0); pin(s);
+      P(Array.from({ length: n + 1 }, (_, i) => [i * w, i % 2 ? -d : 0]), 'ef'); pin(0); pin(s);
+    } else {
+      // coques, gridshells, structures gonflables : section courbe
+      P(curve(x => para(x, s / (f || 5))), 'ef'); pin(0); pin(s);
     }
     return out.join('');
   }
@@ -106,8 +150,8 @@
       S.TYPOLOGIES.forEach(t => t.rows.filter(r => r[0] === st.mat).forEach(r => rows.push({ t, v: r[1], sp: r[2], lh: r[3] })));
       rows.sort((a, b) => a.sp[1] - b.sp[1] || a.sp[0] - b.sp[0]);
       const row = ({ t, v, sp, lh }) => {
-        const typ = Math.min(Math.sqrt(sp[0] * sp[1]), MAX * 0.97), kind = kindOf(t);
-        const g = elevation(kind, typ, lh);
+        const typ = Math.min(Math.sqrt(sp[0] * sp[1]), MAX * 0.97);
+        const g = elevation(t, typ, lh, v);
         // hauteur du dessin : bornes verticales de l'élévation, en mètres
         const ys = [...g.matchAll(/[ML]([-\d.]+) ([-\d.]+)/g)].map(m => +m[2]);
         const top = Math.min(-0.5, ...ys) - 0.4, bot = Math.max(0.9, ...ys) + 0.2;
