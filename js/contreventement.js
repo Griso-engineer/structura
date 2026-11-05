@@ -102,7 +102,7 @@
       if (opt.hinges) [[x0, y0], [x0 + w, y0], A_, B_].forEach(([x, y]) => gg.append(sv('circle', { cx: x, cy: y, r: 4, class: 'hinge' })));
       [x0, x0 + w].forEach(x => gg.append(S.draw.supportSymbol('rotule', x, y0, 0)));
       S.draw.arrow(gg, A_[0] - (opt.al || 38), A_[1], A_[0] - 6, A_[1], 'load');
-      if (opt.title) gg.append(sv('text', { x: x0 + w / 2, y: y0 + 34, 'text-anchor': 'middle', class: 'fx', style: `font-size:12px;fill:${opt.ok ? 'var(--ink)' : 'var(--c-coral)'}` }, opt.title));
+      if (opt.title) gg.append(sv('text', { x: x0 + w / 2, y: y0 + 34, 'text-anchor': 'middle', class: 'fx', style: `font-size:12px;fill:${opt.ok ? 'var(--ink)' : 'var(--c-red)'}` }, opt.title));
     };
     const gl = sv('g'), gr = sv('g');
     g.append(gl, gr);
@@ -201,7 +201,7 @@
     const plan = (x0, walls, title, ok) => {
       g.append(sv('rect', { x: x0, y: 20, width: 110, height: 80, fill: 'none', stroke: 'var(--ghost)', 'stroke-width': 1.2 }));
       walls.forEach(([x1, y1, x2, y2]) => g.append(sv('line', { x1: x0 + x1, y1: 20 + y1, x2: x0 + x2, y2: 20 + y2, stroke: 'var(--c-coral)', 'stroke-width': 5 })));
-      g.append(sv('text', { x: x0 + 55, y: 122, class: 'fx', 'text-anchor': 'middle', style: `font-size:12px;fill:${ok ? 'var(--ink)' : 'var(--c-coral)'}` }, title));
+      g.append(sv('text', { x: x0 + 55, y: 122, class: 'fx', 'text-anchor': 'middle', style: `font-size:12px;fill:${ok ? 'var(--ink)' : 'var(--c-red)'}` }, title));
       g.append(sv('text', { x: x0 + 55, y: 140, 'text-anchor': 'middle', style: 'font-size:11px' }, ok ? 'stable' : 'instable'));
     };
     plan(10, [[0, 20, 0, 60], [110, 20, 110, 60], [35, 0, 75, 0]], '3 plans non concourants', true);

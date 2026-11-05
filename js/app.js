@@ -7,10 +7,10 @@
   // ------------------------------------------------------------------ accueil
   const ICONS = {
     typologies: '<svg viewBox="0 0 180 70"><path d="M10 62 Q90 -20 170 62"/><path d="M4 62 h172"/><path d="M90 21 v41 M50 36 v26 M130 36 v26"/></svg>',
-    solveur: '<svg viewBox="0 0 180 70"><path d="M20 15 V60 M20 15 H160 M160 15 V60"/><path d="M20 15 Q90 60 160 15" stroke="#fa554f"/><path d="M12 60 h16 M152 60 h16"/></svg>',
-    formulaire: '<svg viewBox="0 0 180 70"><path d="M10 20 H170"/><path d="M10 20 l-6 9 h12 z M170 20 l-6 9 h12 z"/><path d="M10 40 Q90 80 170 40" stroke="#fa554f"/><path d="M10 40 H170" stroke-dasharray="3 4"/></svg>',
+    solveur: '<svg viewBox="0 0 180 70"><path d="M20 15 V60 M20 15 H160 M160 15 V60"/><path d="M20 15 Q90 60 160 15" stroke="#007cfd"/><path d="M12 60 h16 M152 60 h16"/></svg>',
+    formulaire: '<svg viewBox="0 0 180 70"><path d="M10 20 H170"/><path d="M10 20 l-6 9 h12 z M170 20 l-6 9 h12 z"/><path d="M10 40 Q90 80 170 40" stroke="#007cfd"/><path d="M10 40 H170" stroke-dasharray="3 4"/></svg>',
     ordres: '<svg viewBox="0 0 180 70"><path d="M4 64 H176"/><path d="M14 64 V50 M44 64 V36 M74 64 V44 M104 64 V18 M134 64 V30 M164 64 V8" stroke-width="7"/></svg>',
-    contreventement: '<svg viewBox="0 0 180 70"><path d="M66 66 V6 H114 V66 M66 36 H114"/><path d="M66 66 L114 36 M66 36 L114 66 M66 36 L114 6 M66 6 L114 36" stroke="#fa554f"/><path d="M16 20 h32 m-6 -4 l6 4 l-6 4 M16 46 h32 m-6 -4 l6 4 l-6 4"/></svg>'
+    contreventement: '<svg viewBox="0 0 180 70"><path d="M66 66 V6 H114 V66 M66 36 H114"/><path d="M66 66 L114 36 M66 36 L114 66 M66 36 L114 6 M66 6 L114 36" stroke="#007cfd"/><path d="M16 20 h32 m-6 -4 l6 4 l-6 4 M16 46 h32 m-6 -4 l6 4 l-6 4"/></svg>'
   };
 
   S.pages.home = function (root) {
