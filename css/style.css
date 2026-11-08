@@ -13,9 +13,9 @@
   --line: #e4e3df;
   --rule: #111110;
 
-  --c-coral: #007cfd;
+  --c-coral: #4284f4;
   --c-red: #fa554f;  /* rouge sémantique : échecs, erreurs, négatif */
-  --c-coral-2: #2b92fd;
+  --c-coral-2: #6a9ff6;
   --c-sun: #ffca7d;
   --c-orange: #ff6600;
   --c-blue: #3788ff;
@@ -272,7 +272,7 @@ svg.diag .el { stroke: var(--struct); stroke-width: 3; stroke-linecap: square; }
 svg.diag .el.ghost { stroke: var(--ghost); stroke-width: 2; }
 svg.diag .el:hover { stroke: var(--c-coral); }
 svg.diag .node { fill: transparent; stroke: none; cursor: grab; pointer-events: all; }
-svg.diag .node:hover { fill: rgba(0, 124, 253, 0.35); }
+svg.diag .node:hover { fill: rgba(66, 132, 244, 0.35); }
 svg.diag .nlab { font-size: 10px; fill: var(--muted); font-weight: 600; }
 svg.diag .sup { fill: none; stroke: var(--ink); stroke-width: 1.2; stroke-linejoin: miter; }
 svg.diag .supf { fill: var(--paper); stroke: var(--ink); stroke-width: 1.3; }
@@ -608,8 +608,8 @@ svg.icon .t { stroke: #a9a8a3; stroke-width: 0.85; }
 svg.icon .g { fill: none; stroke: #b9b8b3; stroke-width: 0.8; stroke-linecap: round; }
 svg.icon .k { fill: none; stroke: var(--c-coral); stroke-width: 2; stroke-linecap: round; }
 svg.icon .f { fill: #e2e1dc; stroke: none; }
-svg.icon .kw { fill: var(--c-coral); stroke: #0062c9; stroke-width: 0.8; stroke-linejoin: round; }
-svg.icon .kf { fill: rgba(0, 124, 253, 0.28); stroke: var(--c-coral); stroke-width: 0.9; }
+svg.icon .kw { fill: var(--c-coral); stroke: #2a66d0; stroke-width: 0.8; stroke-linejoin: round; }
+svg.icon .kf { fill: rgba(66, 132, 244, 0.28); stroke: var(--c-coral); stroke-width: 0.9; }
 svg.icon .n { fill: none; stroke: var(--ink); stroke-width: 0.7; }
 /* Vignette empilée : 3D en grand, schéma statique en bandeau lisible */
 .fig.stack { padding: 8px 12px 10px; display: grid; gap: 4px; }

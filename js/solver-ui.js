@@ -415,7 +415,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap"><link rel="stylesheet" href="${css}">
 <style>@page{size:A4 portrait;margin:12mm}body{display:block;padding:0;min-height:0;font-size:10pt}.rp{max-width:186mm;margin:0 auto}
 .rp-head{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:1px solid #111;padding-bottom:4mm}
-.rp-head .l{font-weight:900;font-size:22pt;letter-spacing:-.05em}.rp-head .l i{font-style:normal;color:#007cfd}.rp-head .t{font-weight:900;font-size:16pt;color:#007cfd;letter-spacing:-.04em}
+.rp-head .l{font-weight:900;font-size:22pt;letter-spacing:-.05em}.rp-head .l i{font-style:normal;color:#4284f4}.rp-head .t{font-weight:900;font-size:16pt;color:#4284f4;letter-spacing:-.04em}
 h1{font-weight:900;font-size:22pt;letter-spacing:-.04em;margin:5mm 0 1mm}.meta{color:#6e6d69;font-size:9pt}
 h2{font-size:11pt;font-weight:800;margin:5mm 0 2mm;border-top:1px solid #111;padding-top:2mm}
 .cols{display:grid;grid-template-columns:1fr 1fr;gap:6mm}table{width:100%;border-collapse:collapse;font-size:9pt}td{padding:1mm 0;border-bottom:1px solid #e4e3df}td.num{text-align:right}
