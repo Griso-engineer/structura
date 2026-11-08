@@ -752,3 +752,27 @@ svg.icon .hid { stroke: none; fill: none; }
 .co2-ref { width: 190px; font: inherit; font-size: 12px; padding: 4px 6px; border: 1px solid var(--line); }
 .co2-method h3 { font-size: 15px; margin-bottom: 6px; }
 .co2-chart .co2-bio { font-size: 11.5px; font-weight: 500; fill: #b0781f; }
+/* Comparateur carbone : sections modifiables, fiches */
+.co2-sname { font-weight: 600; margin-top: 4px; }
+.co2-dims { display: flex; flex-wrap: wrap; gap: 6px 10px; }
+.co2-dim { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; }
+.co2-dim span { color: var(--muted); }
+.co2-dim input { width: 64px; font: inherit; padding: 3px 5px; border: 1px solid var(--line); text-align: right; }
+.co2-dim select { font: inherit; font-size: 12px; padding: 3px 4px; border: 1px solid var(--line); max-width: 150px; }
+.co2-dim.changed input, .co2-dim.changed select { border-color: var(--c-coral); background: rgba(66, 132, 244, 0.06); }
+.co2-dim small { color: var(--muted); }
+.co2-chk { font-size: 11.5px; margin-top: 5px; font-weight: 600; }
+.co2-chk.ok { color: #2f8a4c; } .co2-chk.ko { color: var(--c-red); }
+.linkbtn { background: none; border: 0; padding: 0; margin-top: 3px; font: inherit; font-size: 11.5px; color: var(--c-coral); cursor: pointer; text-decoration: underline; }
+.co2-chart .co2-warn { font-size: 11.5px; font-weight: 700; fill: var(--c-red); }
+.co2-hyp { margin-top: 26px; border-top: 1px solid var(--rule); padding-top: 14px; }
+.co2-hyp h3 { font-size: 17px; margin-bottom: 4px; }
+.co2-hyp > p { font-size: 13px; margin: 0 0 10px; }
+.co2-mname { display: block; margin-top: 4px; font-size: 13px; }
+.co2-fiche { width: 100%; max-width: 640px; font: inherit; font-size: 13px; padding: 6px 8px; border: 1px solid var(--ink); background: var(--paper); }
+.co2-src { display: block; font-size: 11.5px; color: var(--muted); margin-top: 5px; max-width: 640px; }
+.co2-kind { display: inline-block; font-size: 10.5px; font-weight: 700; padding: 1px 5px; border: 1px solid currentColor; margin-right: 4px; }
+.co2-kind.k-fdes { color: #2f8a4c; } .co2-kind.k-config { color: var(--c-coral); } .co2-kind.k-filiere { color: #b0781f; } .co2-kind.k-estim { color: var(--c-red); }
+.co2-custom { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; margin-top: 6px; font-size: 12.5px; }
+.co2-custom input { font: inherit; padding: 3px 6px; border: 1px solid var(--line); width: 110px; }
+.co2-tbl td:first-child { min-width: 140px; } .co2-tbl td.qty { min-width: 170px; }
