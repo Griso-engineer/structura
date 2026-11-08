@@ -53,7 +53,7 @@
   const val = k => optOf(k).v;
   // carbone biogénique stocké : valeur de la fiche, sinon masse sèche × 50 % de carbone × 44/12
   const bioOf = k => { const m = MATS[k]; if (!m.rho) return 0; const o = optOf(k); return o.bio != null ? o.bio : -m.rho / 1.15 * 0.5 * 44 / 12; };
-  const fmtV = v => (v < 10 ? S.fmt(v, v < 1 ? 3 : 2) : S.fmt(v, v < 100 ? 1 : 0));
+  const fmtV = v => { const a = Math.abs(v); return a < 10 ? S.fmt(v, a < 1 ? 3 : 2) : S.fmt(v, a < 100 ? 1 : 0); };
 
   // ------------------------------------------------------------------ vérifications simplifiées
   const IPE = S.SECTIONS.filter(s => /^IPE/.test(s.key));
@@ -156,23 +156,33 @@
   };
 
   // ------------------------------------------------------------------ bilan d'une solution
+  /* ACV dynamique, méthode RE2020 (arrêté du 4 août 2021) : chaque émission est pondérée selon l'année où
+     elle a lieu. Les modules A1–A3 sont à l'année 0 (coefficient 1), la fin de vie à l'année 50 (≈ 0,578).
+     Le CO₂ biogénique capté par le bois (−stock, année 0) n'est réémis qu'en fin de vie (+stock × 0,578) :
+     l'ACV dynamique retire donc stock × (1 − 0,578) au bilan statique. */
+  const DYN_C50 = 0.578;
   function evaluate(s) {
     const by = { beton: 0, acier: 0, bois: 0 };
     let bio = 0;
     Object.entries(s.q).forEach(([k, qt]) => { by[MATS[k].grp] += qt * val(k); bio += qt * bioOf(k); });
-    return Object.assign(s, { by, bio, tot: by.beton + by.acier + by.bois });
+    const tot = by.beton + by.acier + by.bois, dyn = -bio * (1 - DYN_C50);
+    return Object.assign(s, { by, bio, tot, dyn, totDyn: tot - dyn });
   }
   const qtyTxt = q => Object.entries(q).map(([k, v]) => `${MATS[k].label.split(' (')[0]} ${S.fmt(v, MATS[k].unit === 'kg' ? 0 : 3)} ${MATS[k].unit}`).join(' · ');
 
   // ------------------------------------------------------------------ graphique : barres horizontales empilées
+  /* Pour chaque solution : la barre statique (A1–A3, par matériau) et, dessous, la part retirée par l'ACV
+     dynamique RE2020 au titre du stockage biogénique, qui mène au total dynamique (peut passer sous zéro). */
   function chart(sols, unit) {
-    const W = 760, rowH = 46, top = 26, left = 230, H = top + sols.length * rowH + 30;
-    // le carbone biogénique, souvent plus grand que les émissions, n'est pas tracé à la même échelle : il est noté en fin de ligne
-    const maxE = Math.max(...sols.map(s => s.tot)), k = (W - left - 190) / (maxE || 1), x0 = left;
+    const W = 760, rowH = 58, top = 30, left = 230, H = top + sols.length * rowH + 46;
+    const maxE = Math.max(...sols.map(s => s.tot)), minE = Math.min(0, ...sols.map(s => s.totDyn));
+    const k = (W - left - 215) / ((maxE - minE) || 1), x0 = left - minE * k;
     const g = sv('svg', { viewBox: `0 0 ${W} ${H}`, class: 'diag co2-chart' });
-    g.append(sv('line', { x1: x0, y1: top - 8, x2: x0, y2: H - 24, class: 'co2-zero' }));
-    g.append(sv('text', { x: x0 + 4, y: top - 12, class: 'co2-ax' }, `émissions A1–A3, kgCO₂e ${unit}`));
-    const best = Math.min(...sols.map(s => s.tot));
+    g.append(sv('defs', {}, sv('pattern', { id: 'co2-dyn', width: 5, height: 5, patternUnits: 'userSpaceOnUse', patternTransform: 'rotate(45)' },
+      sv('rect', { width: 5, height: 5, fill: '#eaf6ee' }), sv('line', { x1: 0, y1: 0, x2: 0, y2: 5, stroke: '#2f8a4c', 'stroke-width': 1.6 }))));
+    g.append(sv('line', { x1: x0, y1: top - 8, x2: x0, y2: H - 40, class: 'co2-zero' }));
+    g.append(sv('text', { x: x0 + 4, y: top - 14, class: 'co2-ax' }, `kgCO₂e ${unit}`));
+    const best = Math.min(...sols.map(s => s.tot)), bestD = Math.min(...sols.map(s => s.totDyn));
     sols.forEach((s, i) => {
       const y = top + i * rowH;
       g.append(sv('text', { x: 0, y: y + 17, class: 'co2-name' }, s.name));
@@ -181,16 +191,26 @@
         const w = s.by[gk] * k;
         if (w > 0.2) { g.append(sv('rect', { x, y: y + 4, width: w, height: 18, class: 'co2-' + gk }, sv('title', {}, `${GROUPS[gk]} : ${S.fmt(s.by[gk], 0)} kgCO₂e`))); x += w; }
       });
-      const t = sv('text', { x: x + 6, y: y + 18, class: 'co2-val' + (s.tot === best ? ' best' : '') }, fmtV(s.tot));
-      if (s.bio < 0) t.append(sv('tspan', { class: 'co2-bio', dx: 10 }, `stock biogénique ${S.fmt(s.bio, 0)} kgCO₂`));
+      const t = sv('text', { x: x + 6, y: y + 18, class: 'co2-val' + (s.tot === best ? ' best' : '') }, `${fmtV(s.tot)} statique`);
       if (!s.chk.ok) t.append(sv('tspan', { class: 'co2-warn', dx: 10 }, '⚠ section insuffisante'));
       g.append(t);
+      // ce que l'ACV dynamique retire : de la fin de la barre statique vers le total dynamique
+      if (s.dyn > 0) {
+        const xe = x0 + s.tot * k, xd = x0 + s.totDyn * k;
+        g.append(sv('rect', { x: xd, y: y + 26, width: xe - xd, height: 11, fill: 'url(#co2-dyn)', stroke: '#2f8a4c', 'stroke-width': 0.8 },
+          sv('title', {}, `Stockage biogénique en ACV dynamique RE2020 : ${S.fmt(-s.dyn, 0)} kgCO₂e (stock ${S.fmt(s.bio, 0)} × (1 − ${DYN_C50}))`)));
+        g.append(sv('line', { x1: xd, y1: y + 23, x2: xd, y2: y + 40, class: 'co2-dynmark' }));
+        g.append(sv('text', { x: Math.max(xe, x0) + 6, y: y + 36, class: 'co2-dynval' + (s.totDyn === bestD ? ' best' : '') }, `dynamique ${fmtV(s.totDyn)} (−${S.fmt(s.dyn, 0)})`));
+      }
     });
     let lx = 0;
+    const ly = H - 26;
     [['beton', 'Béton'], ['acier', 'Acier'], ['bois', 'Bois']].forEach(([c, l]) => {
-      g.append(sv('rect', { x: lx, y: H - 14, width: 12, height: 10, class: 'co2-' + c }), sv('text', { x: lx + 16, y: H - 5, class: 'co2-ax' }, l)); lx += 70;
+      g.append(sv('rect', { x: lx, y: ly, width: 12, height: 10, class: 'co2-' + c }), sv('text', { x: lx + 16, y: ly + 9, class: 'co2-ax' }, l)); lx += 66;
     });
-    g.append(sv('text', { x: lx, y: H - 5, class: 'co2-ax' }, 'Stock biogénique : carbone contenu dans le bois, affiché à part, jamais déduit du total.'));
+    g.append(sv('rect', { x: lx, y: ly, width: 22, height: 10, fill: 'url(#co2-dyn)', stroke: '#2f8a4c', 'stroke-width': 0.8 }),
+      sv('text', { x: lx + 28, y: ly + 9, class: 'co2-ax' }, `à retirer en ACV dynamique RE2020 : stock biogénique × (1 − ${S.fmt(DYN_C50, 3)})`));
+    g.append(sv('text', { x: 0, y: H - 4, class: 'co2-ax' }, 'Barre pleine : ACV statique A1–A3. Trait vert : total en ACV dynamique RE2020 (stock capté à l\'année 0, réémis en fin de vie à 50 ans).'));
     return g;
   }
 
@@ -237,16 +257,18 @@
       });
       const best = sols.reduce((a, b) => (b.tot < a.tot ? b : a));
       const worst = sols.reduce((a, b) => (b.tot > a.tot ? b : a));
+      const bestD = sols.reduce((a, b) => (b.totDyn < a.totDyn ? b : a));
       const used = [...new Set(sols.flatMap(s => Object.keys(s.q)))].sort((a, b) => Object.keys(MATS).indexOf(a) - Object.keys(MATS).indexOf(b));
       dom.out.innerHTML = '';
       dom.out.append(
         el('div', { class: 'kpis co2-kpis' },
           el('div', { class: 'kpi' }, el('b', {}, 'Solution la plus sobre'), el('span', {}, fmtV(best.tot)), el('small', {}, `kgCO₂e ${u.per} — ${best.name}`)),
           el('div', { class: 'kpi' }, el('b', {}, 'Écart avec la plus émissive'), el('span', {}, `× ${S.fmt(worst.tot / best.tot, 1)}`), el('small', {}, worst.name)),
-          el('div', { class: 'kpi' }, el('b', {}, 'Périmètre'), el('span', {}, 'A1–A3'), el('small', {}, 'production des matériaux, ACV statique'))),
+          el('div', { class: 'kpi' }, el('b', {}, 'Plus sobre en ACV dynamique'), el('span', {}, fmtV(bestD.totDyn)), el('small', {}, `kgCO₂e ${u.per}, méthode RE2020 — ${bestD.name}`)),
+          el('div', { class: 'kpi' }, el('b', {}, 'Périmètre'), el('span', {}, 'A1–A3'), el('small', {}, 'production ; stockage biogénique en dynamique'))),
         el('div', { class: 'co2-chart-wrap' }, chart(sols, u.per)),
         el('div', { class: 'tbl-wrap' }, el('table', { class: 'tbl co2-tbl' },
-          el('thead', {}, el('tr', {}, ...['Solution', 'Section (modifiable)', 'Quantités', 'kgCO₂e (A1–A3)', 'Écart', 'Biogénique stocké'].map((h, i) => el('th', { class: i >= 3 ? 'num' : '' }, h)))),
+          el('thead', {}, el('tr', {}, ...['Solution', 'Section (modifiable)', 'Quantités', 'Statique A1–A3', 'Écart', 'Dynamique RE2020'].map((h, i) => el('th', { class: i >= 3 ? 'num' : '' }, h)))),
           el('tbody', {}, sols.map(s => el('tr', { class: s === best ? 'best' : '' },
             el('td', {}, el('span', { class: 'tag ' + s.mat }, GROUPS[s.mat]), el('div', { class: 'co2-sname' }, s.name)),
             el('td', {}, el('div', { class: 'co2-dims' }, s.dims.map(dm => dimField(s, dm))),
@@ -255,7 +277,7 @@
             el('td', { class: 'qty' }, qtyTxt(s.q)),
             el('td', { class: 'num' }, el('b', {}, fmtV(s.tot))),
             el('td', { class: 'num' }, s === best ? 'référence' : `+${S.fmt((s.tot / best.tot - 1) * 100, 0)} %`),
-            el('td', { class: 'num' }, s.bio < 0 ? `${S.fmt(s.bio, 0)} kgCO₂` : '—')))))),
+            el('td', { class: 'num co2-dyncell' }, el('b', {}, fmtV(s.totDyn)), s.dyn > 0 ? el('small', {}, `stock ${S.fmt(s.bio, 0)} → −${S.fmt(s.dyn, 0)}`) : null)))))),
         el('p', { class: 'note', style: 'margin-top:10px' }, u.note),
         hypotheses(used));
     }
@@ -307,11 +329,12 @@
             el('li', {}, 'Des solutions comparables : même portée, même charge, même usage (unité fonctionnelle).'),
             el('li', {}, 'Des sections proposées par un prédimensionnement simplifié (élancements usuels, résistance et flèche, flambement), modifiables, avec leur taux de travail dans ce contrôle simplifié.'),
             el('li', {}, 'L\'impact de production des matériaux (A1–A3, kgCO₂e), en ACV statique ; pour le bois, la part fossile.'),
-            el('li', {}, 'Le carbone biogénique stocké dans le bois, affiché à part et jamais déduit du total.'),
+            el('li', {}, 'Le carbone biogénique stocké dans le bois, jamais déduit du bilan statique.'),
+            el('li', {}, 'L\'ACV dynamique selon la méthode RE2020 (arrêté du 4 août 2021) pour ce stockage : le CO₂ capté est compté à l\'année 0 (coefficient 1), sa réémission en fin de vie à l\'année 50 (coefficient ≈ 0,578). Le bilan dynamique retire donc 42 % du stock biogénique au bilan statique ; les émissions A1–A3, à l\'année 0, sont inchangées.'),
             el('li', {}, 'Les valeurs « FDES INIES » sont lues dans les fiches publiées (numéro d\'enregistrement indiqué) ; les autres sont des valeurs de configurateur, de filière ou des estimations, signalées comme telles.'))),
           el('div', {}, el('h3', {}, 'Ce qu\'il ne calcule pas'), el('ul', { class: 'list con' },
             el('li', {}, 'Transport, chantier, vie en œuvre et fin de vie (A4–A5, B, C) ni bénéfices au-delà du cycle de vie (D).'),
-            el('li', {}, 'L\'ACV dynamique de la RE2020 (indicateur Ic construction) ni ses seuils.'),
+            el('li', {}, 'L\'indicateur Ic construction complet ni ses seuils : seuls la production (A1–A3) et le stockage biogénique sont pris en compte, en supposant une réémission totale du carbone stocké en fin de vie.'),
             el('li', {}, 'Les fondations, les contreventements, les assemblages détaillés, le feu, l\'acoustique et les vibrations, qui peuvent inverser un classement.'),
             el('li', {}, 'Une connexion en temps réel à INIES : la base n\'offre pas d\'accès public direct depuis une page web ; le webservice INIES est soumis à une demande d\'accès.')))))));
     renderSide(); render();

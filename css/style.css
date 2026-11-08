@@ -776,3 +776,8 @@ svg.icon .hid { stroke: none; fill: none; }
 .co2-custom { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; margin-top: 6px; font-size: 12.5px; }
 .co2-custom input { font: inherit; padding: 3px 6px; border: 1px solid var(--line); width: 110px; }
 .co2-tbl td:first-child { min-width: 140px; } .co2-tbl td.qty { min-width: 170px; }
+.co2-chart .co2-dynval { font-size: 11.5px; font-weight: 700; fill: #2f8a4c; font-variant-numeric: tabular-nums; }
+.co2-chart .co2-dynval.best { text-decoration: underline; }
+.co2-chart .co2-dynmark { stroke: #2f8a4c; stroke-width: 2; }
+.co2-kpis { grid-template-columns: repeat(4, minmax(0, 1fr)); } .co2-dyncell b { color: #2f8a4c; } .co2-dyncell small { display: block; font-size: 11px; color: #2f8a4c; }
+.co2-tbl td:first-child { min-width: 120px; } .co2-tbl td.qty { min-width: 130px; font-size: 11.5px; } .co2-tbl th { white-space: normal; }
