@@ -727,3 +727,28 @@ svg.icon .hid { stroke: none; fill: none; }
 @media (max-width: 860px) { .sc-row, .sc-axis { grid-template-columns: 110px minmax(0, 1fr); } .sc-row .sc-3d, .sc-axis > span:nth-child(2) { display: none; } .sc-row .lh { grid-column: 2; } .sc-axis > span:last-child { display: none; } }
 .sc-el .eh { fill: var(--paper); stroke: var(--ink); stroke-width: 1.1; vector-effect: non-scaling-stroke; }
 .sc-el { clip-path: inset(-40px 0 -40px -40px); }
+/* Comparateur carbone */
+.seg { display: flex; border: 1px solid var(--ink); margin-bottom: 4px; }
+.seg button { flex: 1; font: inherit; font-size: 12.5px; font-weight: 600; padding: 7px 6px; background: var(--paper); color: var(--ink); border: 0; border-left: 1px solid var(--ink); cursor: pointer; }
+.seg button:first-child { border-left: 0; }
+.seg button.on { background: var(--ink); color: var(--paper); }
+.co2-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); margin-bottom: 18px; }
+.co2-chart-wrap { margin-bottom: 16px; }
+.co2-chart { width: 100%; height: auto; display: block; }
+.co2-chart .co2-beton { fill: #8c8b86; } .co2-chart .co2-acier { fill: var(--c-blue); } .co2-chart .co2-bois { fill: var(--c-sun); }
+.co2-chart .co2-zero { stroke: var(--ink); stroke-width: 1; }
+.co2-chart .co2-name { font-size: 13px; font-weight: 600; fill: var(--ink); }
+.co2-chart .co2-val { font-size: 13px; font-weight: 800; fill: var(--ink); font-variant-numeric: tabular-nums; }
+.co2-chart .co2-val.best { fill: var(--c-coral); }
+.co2-chart .co2-ax { font-size: 11px; fill: var(--muted); }
+.co2-tbl td { vertical-align: top; font-size: 13px; }
+.co2-tbl td.qty { font-size: 12px; color: var(--ink-2); }
+.co2-tbl tr.best td { background: rgba(66, 132, 244, 0.07); }
+.co2-tbl .tag { font-size: 11px; }
+.co2-fac td { vertical-align: top; font-size: 13px; }
+.co2-fac td small { display: block; font-size: 11.5px; color: var(--muted); margin-top: 3px; max-width: 520px; }
+.co2-fac tr.changed td { background: rgba(255, 202, 125, 0.18); }
+.co2-in { width: 84px; font: inherit; padding: 4px 6px; border: 1px solid var(--line); text-align: right; }
+.co2-ref { width: 190px; font: inherit; font-size: 12px; padding: 4px 6px; border: 1px solid var(--line); }
+.co2-method h3 { font-size: 15px; margin-bottom: 6px; }
+.co2-chart .co2-bio { font-size: 11.5px; font-weight: 500; fill: #b0781f; }
